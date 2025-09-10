@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 from datetime import datetime, timedelta
@@ -10,7 +11,6 @@ from pathlib import Path
 import pandas as pd
 import typer
 from rich import print
-import json
 
 from . import __version__
 from .alerts.notify import notify

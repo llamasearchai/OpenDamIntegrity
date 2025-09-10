@@ -9,9 +9,9 @@ import time
 from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
+from . import __version__
 from .config import AppConfig
 from .llm.agents_service import default_agent_service
-from . import __version__
 from .stability.stability import (
     InfiniteSlopeParams,
     factor_of_safety_infinite_slope,

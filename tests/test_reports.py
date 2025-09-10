@@ -17,4 +17,3 @@ def test_generate_report_writes_html(tmp_path: Path):
     assert "OpenDamIntegry Report" in html
     assert "Factor of Safety" in html
     assert "NORMAL" in html
-

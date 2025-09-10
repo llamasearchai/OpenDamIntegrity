@@ -121,3 +121,18 @@ Quality and safety
 
 ## Suggested topics (GitHub)
 - geotechnical, stability, dam, InSAR, piezometer, inclinometer, FEA, VTK, pydantic, typer, datasette, openai, machine-learning
+
+## Make Targets and Smoke Tests
+
+- `make test`: runs the pytest suite (`pytest -q`).
+- `make lint`: runs Ruff, Black (check), and mypy.
+- `make type`: runs mypy static checks (optional, stricter).
+- `make format`: applies Ruff fixes and Black formatting.
+- `make smoke`: runs the CLI smoke flow (stability, visualize, report, agent fallback, datasette export).
+- `make smoke-json`: same as smoke but prints structured JSON.
+- `make smoke-api`: probes API endpoints in-process (no network bind) and prints a JSON summary. Use `PYTHONPATH=src python scripts/smoke_api.py --mode server` to launch a live server and probe via HTTP.
+- `make api-run`: runs the API via the CLI (`odintegry api`).
+
+Expected outputs
+- `make smoke-json` emits a JSON object with keys: `stability`, `visualize`, `report`, `agent`, `datasette_export`.
+- `make smoke-api` emits a JSON object: `{ "ok": true, "health": {"status":200,...}, "stability": {"status":200, "body": "..."}, "agent": {"status":200, "body_preview": "..."} }`.

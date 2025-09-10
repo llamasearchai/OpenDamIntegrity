@@ -6,9 +6,7 @@ We use it to make the local developer/test environment deterministic across mach
 
 import os
 
-
 # Prevent third-party pytest plugins from auto-loading. This avoids flaky behaviors
 # when developers have globally installed plugins that interfere with collection.
 # Tests in this repo do not rely on external plugins.
 os.environ.setdefault("PYTEST_DISABLE_PLUGIN_AUTOLOAD", "1")
-

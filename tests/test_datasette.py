@@ -11,9 +11,7 @@ def test_export_to_sqlite_creates_tables(tmp_path: Path):
     assert out.exists()
     conn = sqlite3.connect(out)
     try:
-        cur = conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
-        )
+        cur = conn.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
         tables = {row[0] for row in cur.fetchall()}
         # At minimum, metadata table should exist; sample CSVs add more if present
         assert "metadata" in tables
@@ -22,4 +20,3 @@ def test_export_to_sqlite_creates_tables(tmp_path: Path):
             assert "inclinometers" in tables
     finally:
         conn.close()
-
