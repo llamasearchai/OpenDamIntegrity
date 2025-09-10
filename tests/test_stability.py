@@ -1,5 +1,7 @@
-import math
-from open_dam_integry.stability.stability import InfiniteSlopeParams, factor_of_safety_infinite_slope
+from open_dam_integry.stability.stability import (
+    InfiniteSlopeParams,
+    factor_of_safety_infinite_slope,
+)
 
 
 def test_infinite_slope_fs_basic():
@@ -14,4 +16,3 @@ def test_infinite_slope_fs_basic():
     fs = factor_of_safety_infinite_slope(params)
     assert fs > 1.0
     assert 1.0 < fs < 3.0
-

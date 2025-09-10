@@ -3,6 +3,7 @@
 Implements an infinite slope factor-of-safety method suitable for real-time assessment.
 Units: c in kPa, unit weight gamma in kN/m^3, height z in m, angles in degrees.
 """
+
 from __future__ import annotations
 
 import math
@@ -47,4 +48,3 @@ def risk_level_from_fs(fs: float, t: Thresholds) -> str:
     if fs >= t.alert_fs_min:
         return "ALERT"
     return "EMERGENCY"
-

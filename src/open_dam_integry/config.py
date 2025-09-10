@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, Field
+
 try:  # Python 3.11+
     import tomllib  # type: ignore[attr-defined]
 except Exception:  # pragma: no cover - for Python 3.10 fallback
@@ -41,14 +41,13 @@ class AppConfig(BaseModel):
     weather: WeatherConfig = WeatherConfig()
 
     @staticmethod
-    def load(path: Optional[Path] = None) -> "AppConfig":
+    def load(path: Path | None = None) -> AppConfig:
         if path is None:
-            # Default path relative to repo root
-            candidate = Path(__file__).resolve().parents[3] / "config" / "opendamintegry.toml"
+            # Default path relative to repo root: <root>/src/open_dam_integry/config.py -> parents[2] == <root>
+            candidate = Path(__file__).resolve().parents[2] / "config" / "opendamintegry.toml"
         else:
             candidate = Path(path)
         if not candidate.exists():
             return AppConfig()
         data = tomllib.loads(candidate.read_text(encoding="utf-8"))
         return AppConfig.model_validate(data)
-

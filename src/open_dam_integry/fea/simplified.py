@@ -1,8 +1,8 @@
 """Simplified elastic response estimates and connectors for FEA backends."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict
 
 import numpy as np
 
@@ -33,12 +33,14 @@ def estimate_strain_from_stress(stress_vec: np.ndarray, params: ElasticParams) -
     return strain
 
 
-def pseudo_fea_slope_response(height_m: float, width_m: float, surcharge_kPa: float) -> Dict[str, float]:
+def pseudo_fea_slope_response(
+    height_m: float, width_m: float, surcharge_kPa: float
+) -> dict[str, float]:
     """Toy response: estimate near-surface stress increase and a proxy displacement.
 
     This is a fast closed-form approximation used when a full FEA backend is unavailable.
     """
-    area = max(height_m * width_m, 1e-6)
+    # area not required for this simplified proxy; keep computation minimal
     avg_stress = surcharge_kPa  # simplistic: uniform surcharge
     E_kPa = 5e5  # nominal stiffness (kPa)
     nu = 0.3
@@ -51,4 +53,3 @@ def pseudo_fea_slope_response(height_m: float, width_m: float, surcharge_kPa: fl
         "avg_stress_kpa": float(avg_stress),
         "proxy_vertical_disp_mm": disp_mm,
     }
-

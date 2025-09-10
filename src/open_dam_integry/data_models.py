@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -35,5 +34,4 @@ class StabilityResult(BaseModel):
     method: str = Field("infinite_slope", description="Stability analysis method used")
     factor_of_safety: float
     risk_level: str
-    details: Optional[dict] = None
-
+    details: dict | None = None

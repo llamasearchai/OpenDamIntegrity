@@ -3,10 +3,12 @@
 This module uses the OpenAI Python SDK if available and OPENAI_API_KEY is set.
 It provides deterministic fallbacks if the SDK or key is unavailable.
 """
+
 from __future__ import annotations
 
 import os
-from typing import Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any
 
 try:
     # OpenAI Python SDK v1+
@@ -20,9 +22,9 @@ except Exception:  # pragma: no cover - optional
 
 def _call_openai(
     prompt: str,
-    model: Optional[str] = None,
+    model: str | None = None,
     temperature: float = 0.2,
-) -> Optional[str]:
+) -> str | None:
     api_key = os.getenv("OPENAI_API_KEY")
     if not (_OPENAI_AVAILABLE and api_key):
         return None
@@ -37,9 +39,7 @@ def _call_openai(
             messages=[
                 {
                     "role": "system",
-                    "content": (
-                        "You are a helpful domain expert in tailings dam monitoring."
-                    ),
+                    "content": ("You are a helpful domain expert in tailings dam monitoring."),
                 },
                 {"role": "user", "content": prompt},
             ],
@@ -56,9 +56,7 @@ def _call_openai(
                 messages=[
                     {
                         "role": "system",
-                        "content": (
-                            "You are a helpful domain expert in tailings dam monitoring."
-                        ),
+                        "content": ("You are a helpful domain expert in tailings dam monitoring."),
                     },
                     {"role": "user", "content": prompt},
                 ],
@@ -88,11 +86,21 @@ def explain_stability(fs: float, risk_level: str, thresholds: Any) -> str:
     # Deterministic fallback
     t = thresholds
     band = (
-        f"NORMAL (>= {t.normal_fs_min})" if fs >= t.normal_fs_min else
-        f"WATCH (>= {t.watch_fs_min})" if fs >= t.watch_fs_min else
-        f"WARNING (>= {t.warning_fs_min})" if fs >= t.warning_fs_min else
-        f"ALERT (>= {t.alert_fs_min})" if fs >= t.alert_fs_min else
-        "EMERGENCY (< alert minimum)"
+        f"NORMAL (>= {t.normal_fs_min})"
+        if fs >= t.normal_fs_min
+        else (
+            f"WATCH (>= {t.watch_fs_min})"
+            if fs >= t.watch_fs_min
+            else (
+                f"WARNING (>= {t.warning_fs_min})"
+                if fs >= t.warning_fs_min
+                else (
+                    f"ALERT (>= {t.alert_fs_min})"
+                    if fs >= t.alert_fs_min
+                    else "EMERGENCY (< alert minimum)"
+                )
+            )
+        )
     )
     suggestions = {
         "NORMAL": "Continue routine monitoring; review weekly trends.",
@@ -132,4 +140,3 @@ def explain_report_context(context: Mapping[str, Any]) -> str:
         f"Summary: FS={fs} with risk '{risk}'. Trends: {trend_summ or 'no trend data'}. "
         "Monitor for changes; reassess after significant precipitation or loading."
     )
-

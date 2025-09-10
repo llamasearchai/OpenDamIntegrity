@@ -1,38 +1,70 @@
 """Command-line interface for OpenDamIntegry using Typer."""
+
 from __future__ import annotations
 
+import logging
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 import typer
 from rich import print
+import json
 
 from . import __version__
+from .alerts.notify import notify
 from .config import AppConfig
-from .ingest.sensors import read_inclinometers, read_piezometers, read_settlement
+from .datasette.export import export_to_sqlite, serve_datasette
+from .fea.fenics_connector import run_fea_or_fallback
+from .fea.pynastran_connector import run_pynastran_or_fallback
 from .ingest.insar import read_insar_csv
+from .ingest.sensors import read_inclinometers, read_piezometers, read_settlement
 from .ingest.weather import fetch_precipitation_series
+from .llm.agent import explain_report_context, explain_stability
+from .llm.agents_service import default_agent_service
 from .signal_processing.trends import linear_trend
 from .stability.stability import (
     InfiniteSlopeParams,
     factor_of_safety_infinite_slope,
     risk_level_from_fs,
 )
-from .fea.fenics_connector import run_fea_or_fallback
-from .fea.pynastran_connector import run_pynastran_or_fallback
 from .visualization.viz3d import render_dam_surface_png
-from .alerts.notify import notify
-from .llm.agent import explain_stability, explain_report_context
-from .datasette.export import export_to_sqlite, serve_datasette
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
+
+# Basic logging config for CLI commands
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(level=LOG_LEVEL, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+logger = logging.getLogger("odintegry.cli")
+
+
+# Global flag toggled by --json-output
+JSON_OUTPUT = False
+
+
+def echo(obj):
+    """Print either pretty JSON or rich repr based on global flag."""
+    if JSON_OUTPUT:
+        try:
+            print(json.dumps(obj, indent=2, default=str))
+            return
+        except Exception:
+            # Fallback to string if not JSON-serializable
+            print(json.dumps({"text": str(obj)}, indent=2))
+            return
+    print(obj)
+
+
+@app.callback()
+def main(json_output: bool = typer.Option(False, help="Output JSON for machine parsing")):
+    global JSON_OUTPUT
+    JSON_OUTPUT = json_output
 
 
 @app.command()
 def version() -> None:
-    print(f"OpenDamIntegry v{__version__}")
+    echo(f"OpenDamIntegry v{__version__}")
 
 
 @app.command()
@@ -47,12 +79,14 @@ def ingest(
     pie = read_piezometers(piezometer_csv)
     setl = read_settlement(settlement_csv)
     insar = read_insar_csv(insar_csv)
-    print({
-        "inclinometers_rows": len(inc),
-        "piezometers_rows": len(pie),
-        "settlement_rows": len(setl),
-        "insar_rows": len(insar),
-    })
+    print(
+        {
+            "inclinometers_rows": len(inc),
+            "piezometers_rows": len(pie),
+            "settlement_rows": len(setl),
+            "insar_rows": len(insar),
+        }
+    )
 
 
 @app.command()
@@ -63,7 +97,7 @@ def stability(
     height_m: float = typer.Option(20.0, help="Soil thickness in meters"),
     gamma_kN_m3: float = typer.Option(18.0, help="Unit weight in kN/m^3"),
     ru: float = typer.Option(0.2, help="Pore pressure ratio u/σn (0-1)"),
-    config_path: Optional[Path] = typer.Option(None, help="Path to TOML config"),
+    config_path: Path | None = typer.Option(None, help="Path to TOML config"),
 ):
     """Compute factor of safety using the infinite slope model and print risk level."""
     config = AppConfig.load(config_path)
@@ -77,7 +111,7 @@ def stability(
     )
     fs = factor_of_safety_infinite_slope(p)
     risk = risk_level_from_fs(fs, config.thresholds)
-    print({"factor_of_safety": fs, "risk_level": risk})
+    echo({"factor_of_safety": fs, "risk_level": risk})
 
 
 @app.command()
@@ -88,7 +122,7 @@ def visualize(
     height: int = 30,
 ):
     out = render_dam_surface_png(output, width=width, depth=depth, height=height)
-    print({"image": str(out)})
+    echo({"image": str(out)})
 
 
 @app.command()
@@ -105,7 +139,7 @@ def fea(
     else:
         # auto or simplified both route through FEniCS wrapper which falls back
         res = run_fea_or_fallback(height_m, width_m, surcharge_kpa)
-    print(res)
+    echo(res)
 
 
 @app.command()
@@ -117,7 +151,7 @@ def weather(
     end = datetime.utcnow()
     start = end - timedelta(days=start_days_ago)
     df = fetch_precipitation_series(latitude, longitude, start, end)
-    print({"rows": len(df), "total_precip_mm": float(df["precipitation"].sum())})
+    echo({"rows": len(df), "total_precip_mm": float(df["precipitation"].sum())})
 
 
 @app.command()
@@ -129,7 +163,7 @@ def report(
     gamma_kN_m3: float = 18.0,
     ru: float = 0.2,
     output_dir: Path = Path("reports"),
-    config_path: Optional[Path] = None,
+    config_path: Path | None = None,
     use_llm: bool = typer.Option(
         False,
         help=(
@@ -171,20 +205,20 @@ def report(
     from .reports.generate import generate_report
 
     out = generate_report(context, output_dir=output_dir)
-    print({"report": str(out)})
+    echo({"report": str(out)})
 
 
 @app.command()
 def alert_test(
     level: str = typer.Argument("WATCH"),
     message: str = typer.Argument("Test alert from OpenDamIntegry"),
-    email_to: Optional[str] = typer.Option(None),
-    sms_to: Optional[str] = typer.Option(None),
-    config_path: Optional[Path] = typer.Option(None),
+    email_to: str | None = typer.Option(None),
+    sms_to: str | None = typer.Option(None),
+    config_path: Path | None = typer.Option(None),
 ):
     config = AppConfig.load(config_path)
     notify(level, message, config.alerts, email_to=email_to, sms_to=sms_to)
-    print({"sent": True})
+    echo({"sent": True})
 
 
 @app.command()
@@ -195,7 +229,7 @@ def explain(
     height_m: float = 20.0,
     gamma_kN_m3: float = 18.0,
     ru: float = 0.2,
-    config_path: Optional[Path] = None,
+    config_path: Path | None = None,
 ):
     """Use the LLM (if configured) to explain the current stability state.
 
@@ -217,6 +251,32 @@ def explain(
 
 
 @app.command()
+def agent(
+    prompt: str = typer.Argument(..., help="User prompt for the OpenAI Agent/Assistant"),
+):
+    """Query the OpenAI Agent/Assistant (falls back to deterministic if not configured)."""
+    service = default_agent_service()
+    response = service.respond(prompt)
+    echo({"text": response.text, "meta": response.meta})
+
+
+@app.command()
+def api(
+    host: str = typer.Option("127.0.0.1", help="API host"),
+    port: int = typer.Option(8000, help="API port"),
+    reload: bool = typer.Option(False, help="Enable auto-reload (dev only)"),
+):
+    """Run the FastAPI server exposing health, stability, and agent endpoints."""
+    try:
+        import uvicorn  # type: ignore
+    except Exception as e:  # pragma: no cover
+        print({"error": f"uvicorn not available: {e}"})
+        raise typer.Exit(1) from None
+
+    uvicorn.run("open_dam_integry.api:app", host=host, port=port, reload=reload)
+
+
+@app.command()
 def datasette_export(
     db_path: Path = typer.Option(
         Path("data/opendamintegry.db"),
@@ -229,7 +289,7 @@ def datasette_export(
 ):
     """Export sample CSV data into a SQLite database for exploration."""
     out = export_to_sqlite(db_path, samples_dir)
-    print({"sqlite_db": str(out)})
+    echo({"sqlite_db": str(out)})
 
 
 @app.command()
@@ -242,7 +302,66 @@ def datasette_serve(
 ):
     """Serve the SQLite database with Datasette if installed."""
     info = serve_datasette(db_path, port)
-    print(info)
+    echo(info)
+
+
+@app.command()
+def agent_status():
+    """Show OpenAI Agents integration status without making network calls."""
+    service = default_agent_service()
+    echo(service.status())
+
+
+@app.command()
+def smoke():
+    """Run a quick end-to-end CLI smoke test using sample data.
+
+    Executes stability, visualize, report, agent (fallback if not configured), and datasette export.
+    """
+    results = {}
+    # Stability
+    p = InfiniteSlopeParams(
+        cohesion_kpa=5.0,
+        phi_deg=28.0,
+        beta_deg=20.0,
+        height_m=20.0,
+        unit_weight_kN_m3=18.0,
+        ru=0.2,
+    )
+    fs = factor_of_safety_infinite_slope(p)
+    results["stability"] = {"fs": fs, "risk": risk_level_from_fs(fs, AppConfig().thresholds)}
+
+    # Visualize
+    img_path = render_dam_surface_png(Path("outputs/dam_surface.png"))
+    results["visualize"] = {"image": str(img_path)}
+
+    # Report
+    inc = pd.read_csv(Path("data/samples/inclinometers.csv"))
+    slope, pval = linear_trend(inc["displacement_mm"].values)
+    ctx = {
+        "fs": fs,
+        "risk_level": results["stability"]["risk"],
+        "trends": {"inc": {"slope": slope, "pvalue": pval}},
+        "notes": ["Smoke test report."],
+    }
+    from .reports.generate import generate_report
+
+    report_path = generate_report(ctx, output_dir=Path("reports"))
+    results["report"] = {"path": str(report_path)}
+
+    # Agent fallback or live
+    service = default_agent_service()
+    agent_resp = service.respond("Provide a single-sentence dam stability summary.")
+    results["agent"] = {
+        "backend": agent_resp.meta.get("backend"),
+        "text_preview": agent_resp.text[:80],
+    }
+
+    # Datasette export (no serve)
+    db_path = export_to_sqlite(Path("data/opendamintegry.db"), Path("data/samples"))
+    results["datasette_export"] = {"db": str(db_path)}
+
+    echo(results)
 
 
 if __name__ == "__main__":

@@ -1,8 +1,9 @@
 """Weather data ingestion using Open-Meteo API (no API key required)."""
+
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import datetime
-from typing import Iterable
 
 import pandas as pd
 import requests
@@ -27,11 +28,16 @@ def fetch_precipitation_series(
         "hourly": "precipitation",
         "timezone": "UTC",
     }
-    resp = requests.get(base, params=params, timeout=30)
-    resp.raise_for_status()
-    data = resp.json()
-    times: Iterable[str] = data.get("hourly", {}).get("time", [])
-    prec: Iterable[float] = data.get("hourly", {}).get("precipitation", [])
-    df = pd.DataFrame({"time": pd.to_datetime(list(times), utc=True), "precipitation": list(prec)})
-    return df
-
+    try:
+        resp = requests.get(base, params=params, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+        times: Iterable[str] = data.get("hourly", {}).get("time", [])
+        prec: Iterable[float] = data.get("hourly", {}).get("precipitation", [])
+        df = pd.DataFrame(
+            {"time": pd.to_datetime(list(times), utc=True), "precipitation": list(prec)}
+        )
+        return df
+    except Exception:
+        # Offline or API error: return empty DataFrame to keep CLI/API resilient
+        return pd.DataFrame({"time": pd.to_datetime([], utc=True), "precipitation": []})

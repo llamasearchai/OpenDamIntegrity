@@ -1,7 +1,9 @@
 """Sensor ingestion helpers for OpenDamIntegry."""
+
 from __future__ import annotations
 
 from pathlib import Path
+
 import pandas as pd
 
 
@@ -26,4 +28,3 @@ def read_piezometers(path: str | Path) -> pd.DataFrame:
 def read_settlement(path: str | Path) -> pd.DataFrame:
     """Read settlement plates CSV with columns: timestamp, settlement_mm"""
     return _read_csv(path, ["timestamp"])
-

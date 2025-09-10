@@ -1,7 +1,8 @@
 """Signal processing functions: filtering and denoising."""
+
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 
 import numpy as np
 from scipy import signal
@@ -12,7 +13,9 @@ except Exception:  # pragma: no cover - optional
     pywt = None  # type: ignore
 
 
-def butter_lowpass_filter(x: Iterable[float], cutoff_hz: float, fs_hz: float, order: int = 4) -> np.ndarray:
+def butter_lowpass_filter(
+    x: Iterable[float], cutoff_hz: float, fs_hz: float, order: int = 4
+) -> np.ndarray:
     """Zero-phase Butterworth low-pass filter using filtfilt."""
     x_arr = np.asarray(list(x), dtype=float)
     nyq = 0.5 * fs_hz
@@ -38,4 +41,3 @@ def wavelet_denoise(x: Iterable[float], wavelet: str = "db4", level: int = 1) ->
     for c in coeffs[1:]:
         denoised.append(pywt.threshold(c, value=uthresh, mode="soft"))
     return pywt.waverec(denoised, wavelet, mode="periodization")
-
