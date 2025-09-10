@@ -59,6 +59,7 @@ logs/
 # Data outputs
 outputs/
 reports/
+data/*.db
 
 # MyPy
 .mypy_cache/

@@ -1,5 +1,6 @@
 # OpenDamIntegry
 
+## About
 Advanced Python system that combines geotechnical monitoring, structural analysis, and predictive modeling to ensure the physical integrity of tailings dams via continuous monitoring and stability assessment.
 
 Features
@@ -47,4 +48,7 @@ Alerts configuration
 Notes
 - Heavy optional stacks (VTK, XGBoost, PyNastran, DOLFINx) are offered via extras in pyproject.toml
 - Core functionality is complete and runs without optional stacks; advanced backends will be used automatically if installed.
+
+## Suggested topics (GitHub)
+- geotechnical, stability, dam, InSAR, piezometer, inclinometer, FEA, VTK, pydantic, typer, datasette, openai, machine-learning
 

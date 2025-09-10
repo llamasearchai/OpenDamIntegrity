@@ -1,12 +1,10 @@
 """Command-line interface for OpenDamIntegry using Typer."""
 from __future__ import annotations
 
-import json
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
-import numpy as np
 import pandas as pd
 import typer
 from rich import print
@@ -16,7 +14,6 @@ from .config import AppConfig
 from .ingest.sensors import read_inclinometers, read_piezometers, read_settlement
 from .ingest.insar import read_insar_csv
 from .ingest.weather import fetch_precipitation_series
-from .signal_processing.filters import butter_lowpass_filter, wavelet_denoise
 from .signal_processing.trends import linear_trend
 from .stability.stability import (
     InfiniteSlopeParams,
@@ -133,7 +130,13 @@ def report(
     ru: float = 0.2,
     output_dir: Path = Path("reports"),
     config_path: Optional[Path] = None,
-    use_llm: bool = typer.Option(False, help="If true, use LLM to add explanatory notes (requires OPENAI_API_KEY and openai package)"),
+    use_llm: bool = typer.Option(
+        False,
+        help=(
+            "If true, use LLM to add explanatory notes (requires OPENAI_API_KEY "
+            "and the openai package installed via the [llm] extra)."
+        ),
+    ),
 ):
     config = AppConfig.load(config_path)
     p = InfiniteSlopeParams(
@@ -147,7 +150,8 @@ def report(
     fs = factor_of_safety_infinite_slope(p)
     risk = risk_level_from_fs(fs, config.thresholds)
 
-    # Example trend placeholders computed from sample data (real pipeline would compute from sensors)
+    # Example trend placeholders computed from sample data
+    # (a real pipeline would compute from live sensor series)
     inc = pd.read_csv(Path("data/samples/inclinometers.csv"))
     slope, pval = linear_trend(inc["displacement_mm"].values)
 
@@ -214,8 +218,14 @@ def explain(
 
 @app.command()
 def datasette_export(
-    db_path: Path = typer.Option(Path("data/opendamintegry.db"), help="SQLite database path to write"),
-    samples_dir: Path = typer.Option(Path("data/samples"), help="Directory containing sample CSVs"),
+    db_path: Path = typer.Option(
+        Path("data/opendamintegry.db"),
+        help="SQLite database path to write",
+    ),
+    samples_dir: Path = typer.Option(
+        Path("data/samples"),
+        help="Directory containing sample CSVs",
+    ),
 ):
     """Export sample CSV data into a SQLite database for exploration."""
     out = export_to_sqlite(db_path, samples_dir)
@@ -224,7 +234,10 @@ def datasette_export(
 
 @app.command()
 def datasette_serve(
-    db_path: Path = typer.Option(Path("data/opendamintegry.db"), help="SQLite database path to serve"),
+    db_path: Path = typer.Option(
+        Path("data/opendamintegry.db"),
+        help="SQLite database path to serve",
+    ),
     port: int = typer.Option(8001, help="Port to serve Datasette on"),
 ):
     """Serve the SQLite database with Datasette if installed."""

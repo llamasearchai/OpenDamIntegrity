@@ -18,7 +18,11 @@ except Exception:  # pragma: no cover - optional
     _OPENAI_AVAILABLE = False
 
 
-def _call_openai(prompt: str, model: Optional[str] = None, temperature: float = 0.2) -> Optional[str]:
+def _call_openai(
+    prompt: str,
+    model: Optional[str] = None,
+    temperature: float = 0.2,
+) -> Optional[str]:
     api_key = os.getenv("OPENAI_API_KEY")
     if not (_OPENAI_AVAILABLE and api_key):
         return None
@@ -31,7 +35,12 @@ def _call_openai(prompt: str, model: Optional[str] = None, temperature: float = 
         resp = client.chat.completions.create(  # type: ignore[attr-defined]
             model=model,
             messages=[
-                {"role": "system", "content": "You are a helpful domain expert in tailings dam monitoring."},
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a helpful domain expert in tailings dam monitoring."
+                    ),
+                },
                 {"role": "user", "content": prompt},
             ],
             temperature=temperature,
@@ -45,7 +54,12 @@ def _call_openai(prompt: str, model: Optional[str] = None, temperature: float = 
             resp = openai.ChatCompletion.create(  # type: ignore[attr-defined]
                 model=model,
                 messages=[
-                    {"role": "system", "content": "You are a helpful domain expert in tailings dam monitoring."},
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a helpful domain expert in tailings dam monitoring."
+                        ),
+                    },
                     {"role": "user", "content": prompt},
                 ],
                 temperature=temperature,
@@ -87,9 +101,13 @@ def explain_stability(fs: float, risk_level: str, thresholds: Any) -> str:
         "ALERT": "Initiate response plan; reduce loads; prepare for possible evacuation.",
         "EMERGENCY": "Execute emergency procedures immediately; ensure personnel safety.",
     }
-    suggestion = suggestions.get(risk_level, "Review data quality and assumptions; reassess promptly.")
+    suggestion = suggestions.get(
+        risk_level,
+        "Review data quality and assumptions; reassess promptly.",
+    )
     return (
-        f"Computed FS={fs:.3f} maps to {risk_level} based on configured bands ({band}). {suggestion}"
+        f"Computed FS={fs:.3f} maps to {risk_level} based on configured bands ({band}). "
+        f"{suggestion}"
     )
 
 
@@ -104,7 +122,8 @@ def explain_report_context(context: Mapping[str, Any]) -> str:
     prompt = (
         "Summarize dam status using the following: "
         f"FS={fs}, risk='{risk}', trends=[{trend_summ}]. "
-        "Be specific but concise (<= 120 words); mention if trends suggest deteriorating conditions."
+        "Be specific but concise (<= 120 words); mention if trends suggest "
+        "deteriorating conditions."
     )
     llm_text = _call_openai(prompt)
     if llm_text:

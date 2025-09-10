@@ -7,7 +7,6 @@ from __future__ import annotations
 import sqlite3
 import subprocess
 from pathlib import Path
-from typing import Dict
 
 import pandas as pd
 
@@ -44,7 +43,7 @@ def export_to_sqlite(db_path: Path | str, samples_dir: Path | str) -> Path:
     return db_path
 
 
-def serve_datasette(db_path: Path | str, port: int = 8001) -> Dict[str, str | int | bool]:
+def serve_datasette(db_path: Path | str, port: int = 8001) -> dict[str, str | int | bool]:
     """Run `datasette` on the given SQLite DB if installed.
 
     Returns an info dict with either error or invocation details.
@@ -56,7 +55,10 @@ def serve_datasette(db_path: Path | str, port: int = 8001) -> Dict[str, str | in
     try:
         subprocess.run(["datasette", "--version"], check=True, capture_output=True)
     except Exception:
-        return {"served": False, "error": "datasette is not installed. Install with extras: '.[datasette]'"}
+        return {
+            "served": False,
+            "error": "datasette is not installed. Install via extras: '.[datasette]'",
+        }
 
     try:
         # Start server (foreground). Users can Ctrl-C to stop.
