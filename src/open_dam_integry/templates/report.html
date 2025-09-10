@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenDamIntegry Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; color: #1b1b1b; }
+    h1 { margin-bottom: 0.2rem; }
+    h2 { margin-top: 1.6rem; }
+    .meta { color: #666; font-size: 0.9rem; }
+    table { border-collapse: collapse; }
+    td, th { border: 1px solid #ddd; padding: 0.5rem 0.75rem; }
+    th { background: #f0f0f0; text-align: left; }
+    .badge { padding: 0.2rem 0.5rem; border-radius: 4px; color: #fff; }
+    .NORMAL { background: #2e7d32; }
+    .WATCH { background: #f9a825; }
+    .WARNING { background: #ef6c00; }
+    .ALERT { background: #d32f2f; }
+    .EMERGENCY { background: #880e4f; }
+  </style>
+</head>
+<body>
+  <h1>OpenDamIntegry Report</h1>
+  <div class="meta">Generated at {{ generated_at }}</div>
+
+  <h2>Summary</h2>
+  <table>
+    <tr><th>Factor of Safety</th><td>{{ fs|round(3) }}</td></tr>
+    <tr><th>Risk Level</th><td><span class="badge {{ risk_level }}">{{ risk_level }}</span></td></tr>
+  </table>
+
+  {% if trends %}
+  <h2>Trends</h2>
+  <table>
+    <tr><th>Series</th><th>Slope</th><th>P-Value</th></tr>
+    {% for name, t in trends.items() %}
+      <tr><td>{{ name }}</td><td>{{ '%.6f'|format(t.slope) }}</td><td>{{ '%.3g'|format(t.pvalue) }}</td></tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+
+  {% if notes %}
+  <h2>Notes</h2>
+  <ul>
+    {% for n in notes %}
+      <li>{{ n }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</body>
+</html>
+
