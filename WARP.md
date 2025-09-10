@@ -35,6 +35,9 @@ Common commands
   - odintegry fea --backend simplified --height-m 20 --width-m 60 --surcharge-kpa 10
   - odintegry alert_test WATCH "Test alert" --email-to someone@example.com   # requires SMTP/Twilio env vars
   - odintegry report   # writes reports/report_YYYYMMDD_HHMMSS.html
+  - odintegry explain  # LLM-backed summary if OPENAI_API_KEY is set (fallbacks otherwise)
+  - odintegry datasette-export --db-path data/opendamintegry.db  # export samples to SQLite
+  - odintegry datasette-serve --db-path data/opendamintegry.db --port 8001  # serve via Datasette
 
 Architecture overview (big picture)
 - CLI (Typer) entrypoint: odintegry (src/open_dam_integry/cli.py)
@@ -81,7 +84,9 @@ Optional extras (pyproject.toml)
 - alerts: twilio
 - ml: xgboost
 - reports: weasyprint (optional for PDF; HTML generation relies on Jinja2 which is a core dependency)
-- Install example: uv pip install -e .[dev,fea,viz,alerts,ml,reports]
+- llm: openai (for LLM-backed explanations)
+- datasette: datasette (for data exploration via SQLite and Datasette)
+- Install example: uv pip install -e .[dev,fea,viz,alerts,ml,reports,llm,datasette]
 
 Configuration and data
 - Default config: config/opendamintegry.toml
@@ -92,6 +97,8 @@ Configuration and data
 
 Notes and gotchas
 - Report generation: odintegry report renders templates/report.html with Jinja2 and writes a timestamped HTML report to the chosen output directory (default: reports/).
+- LLM usage: set OPENAI_API_KEY in your environment and optionally OAI_MODEL (default: gpt-4o-mini). The code falls back to deterministic explanations if not configured.
+- Datasette: install via extras and use datasette-export and datasette-serve to explore data locally.
 - tox is configured with installer = uv and env_list = py310; it runs pytest -q.
 - Formatting/linting settings: line length 100 (black/ruff); ruff targets py310 and selects E,F,I,B,UP,C90; mypy ignores missing imports.
 

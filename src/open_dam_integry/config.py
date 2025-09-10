@@ -6,7 +6,10 @@ from pathlib import Path
 from typing import Optional
 
 from pydantic import BaseModel, Field
-import tomllib
+try:  # Python 3.11+
+    import tomllib  # type: ignore[attr-defined]
+except Exception:  # pragma: no cover - for Python 3.10 fallback
+    import tomli as tomllib  # type: ignore[no-redef]
 
 
 class Thresholds(BaseModel):

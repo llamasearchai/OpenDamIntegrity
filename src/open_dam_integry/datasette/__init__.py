@@ -1,0 +1,2 @@
+"""Datasette package init"""
+

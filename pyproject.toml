@@ -48,6 +48,12 @@ reports = [
   # Optional: HTML-to-PDF; core HTML reports use Jinja2 only
   "weasyprint>=61.0",
 ]
+llm = [
+  "openai>=1.0.0",
+]
+datasette = [
+  "datasette>=0.64",
+]
 dev = [
   "pytest>=7.4",
   "pytest-cov>=4.1",
