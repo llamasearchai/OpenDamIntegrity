@@ -1,21 +1,22 @@
 """Alerts and notifications: email and SMS (Twilio) with env-based configuration."""
+
 from __future__ import annotations
 
 import os
 import smtplib
 from email.message import EmailMessage
-from typing import Optional
 
 from ..config import AlertsConfig
 
 try:
     from twilio.rest import Client  # type: ignore
+
     TWILIO_AVAILABLE = True
 except Exception:  # pragma: no cover - optional
     TWILIO_AVAILABLE = False
 
 
-def send_email(subject: str, body: str, to_email: str, from_email: Optional[str] = None) -> None:
+def send_email(subject: str, body: str, to_email: str, from_email: str | None = None) -> None:
     host = os.getenv("SMTP_HOST")
     port = int(os.getenv("SMTP_PORT", "587"))
     user = os.getenv("SMTP_USER")
@@ -50,10 +51,15 @@ def send_sms(body: str, to_number: str) -> None:
     client.messages.create(body=body, from_=from_number, to=to_number)
 
 
-def notify(level: str, message: str, config: AlertsConfig, email_to: Optional[str] = None, sms_to: Optional[str] = None) -> None:
+def notify(
+    level: str,
+    message: str,
+    config: AlertsConfig,
+    email_to: str | None = None,
+    sms_to: str | None = None,
+) -> None:
     subject = f"OpenDamIntegry Alert: {level}"
     if config.email_enabled and email_to:
         send_email(subject, message, email_to)
     if config.sms_enabled and sms_to:
         send_sms(f"{level}: {message}", sms_to)
-

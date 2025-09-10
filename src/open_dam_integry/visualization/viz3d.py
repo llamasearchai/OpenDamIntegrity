@@ -1,24 +1,28 @@
 """3D visualization using VTK if available, otherwise matplotlib."""
+
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Tuple
 
 import numpy as np
 
 try:
     import vtk  # type: ignore
+
     VTK_AVAILABLE = True
 except Exception:  # pragma: no cover - optional
     VTK_AVAILABLE = False
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
 
-def _make_surface(width: int = 100, depth: int = 60, height: int = 30) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def _make_surface(
+    width: int = 100, depth: int = 60, height: int = 30
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     x = np.linspace(0, width, 60)
     y = np.linspace(0, depth, 40)
     X, Y = np.meshgrid(x, y)
@@ -27,7 +31,9 @@ def _make_surface(width: int = 100, depth: int = 60, height: int = 30) -> Tuple[
     return X, Y, Z
 
 
-def render_dam_surface_png(output_path: str | Path, width: int = 100, depth: int = 60, height: int = 30) -> Path:
+def render_dam_surface_png(
+    output_path: str | Path, width: int = 100, depth: int = 60, height: int = 30
+) -> Path:
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     X, Y, Z = _make_surface(width, depth, height)
@@ -93,4 +99,3 @@ def render_dam_surface_png(output_path: str | Path, width: int = 100, depth: int
     fig.savefig(output_path, dpi=150)
     plt.close(fig)
     return output_path
-

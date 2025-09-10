@@ -2,6 +2,7 @@
 
 Exports project CSV data into a SQLite DB and optionally serves it with Datasette.
 """
+
 from __future__ import annotations
 
 import sqlite3
@@ -30,9 +31,7 @@ def export_to_sqlite(db_path: Path | str, samples_dir: Path | str) -> Path:
                 df = pd.read_csv(path)
                 df.to_sql(table, conn, if_exists="replace", index=False)
         # Simple metadata table
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, value TEXT)"
-        )
+        conn.execute("CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, value TEXT)")
         conn.execute(
             "INSERT OR REPLACE INTO metadata(key, value) VALUES (?, ?)",
             ("source", "OpenDamIntegry sample export"),
@@ -76,4 +75,3 @@ def serve_datasette(db_path: Path | str, port: int = 8001) -> dict[str, str | in
         return {"served": True, "db": str(db_path), "port": port}
     except subprocess.CalledProcessError as e:
         return {"served": False, "error": f"datasette serve failed: {e}"}
-
